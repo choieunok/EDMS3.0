@@ -5,7 +5,9 @@
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd                    
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd          
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
-
+	
+	<!-- Tomcat DB Pool을 사용하기위해 db.properties사용부분 주석처리 (DB계정 및 암호에 대한 암호화를 문제제기하여 서버pool사용으로 변경) -->
+	<!--  
 	<util:properties id="dbConfig" location="/WEB-INF/classes/config/db.properties" />
  
 	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
@@ -14,11 +16,12 @@
 		<property name="username" value="#{dbConfig['DB_USERNAME']}" />
 		<property name="password" value="#{dbConfig['DB_PASSWORD']}" />
 	</bean>
+	-->
 	
-<!-- 	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean"> -->
-<!-- 		<property name="jndiName" value="java:/oracle"/> -->
-<!-- 		<property name="resourceRef" value="true" /> -->
-<!-- 	</bean> -->
+	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName" value="java:comp/env/jdbc/oracle"/>
+		<property name="resourceRef" value="true" />
+	</bean>
 
 	<bean id="vendorProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<property name="properties">

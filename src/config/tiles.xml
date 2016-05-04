@@ -1,6 +1,6 @@
 <!DOCTYPE tiles-definitions PUBLIC 
         "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" 
-        "C:/EDMS/EDMS3.0/WebContent/files/tiles-config_3_0.dtd">
+        "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
         
 <!-- 
 사이트의 서버가 네트워크연결 불가시 http://tiles.apache.org/dtds/tiles-config_3_0.dtd부분의 dtd파일을 절대경로로 설정 
