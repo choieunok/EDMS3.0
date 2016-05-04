@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.exsoft.external.dao.ExternalDao">
+
+	<!-- 
+	[2000][EDMS-REQ-036]	2015-09-07	이재민 : 조직도연계처리
+	 -->
+
+	<!-- 외부 사용자 정보 조회 Sample -->
+	<select id="externalUserDetail" parameterType="HashMap" resultType="CaseMap">
+		SELECT 
+			USER_ID,EMP_NO,USER_NAME,USER_STATUS
+		FROM XR_USER
+		<where>
+			<if test="user_id != null">
+				AND USER_ID = #{user_id}
+			</if>			
+		</where> 		
+	</select>
+	
+	<!-- 외부 사용자 등록 Sample -->
+	<insert id="externalUserWrite" parameterType="HashMap">
+		INSERT INTO XR_USER (
+			USER_ID, USER_NAME,USER_PASS,USER_STATUS	   			
+		) VALUES (	
+			 #{user_id}, #{user_name},#{user_pass},#{user_status}	
+		)		
+	</insert>
+	
+	<!-- 외부 사용자-그룹 등록 Sample -->
+	<insert id="externalGroupedWrite" parameterType="HashMap">
+		INSERT INTO XR_GROUPED (	
+			GROUP_ID, USER_ID, IS_DEFAULT 
+		) VALUES (	
+			#{group_id}, #{user_id}, #{is_default}	
+		)
+	</insert>
+	
+	
+	
+	<!-- 
+	[1001][EDMS-REQ-070~81]	20150824	최은옥
+	외부연계 파일 Edms 저장 위치 
+	-->
+	<select id="externalInterface" parameterType="HashMap" resultType="CaseMap">
+		SELECT 
+			WORK_CODE,WORK_DESCRIPTION,FOLDER_ID
+		FROM XR_INTERFACE_CODE
+		<where>	
+			<if test="workType != null">
+				AND	WORK_CODE = #{workType, jdbcType=VARCHAR}
+			</if>					
+					
+		</where> 		
+	</select>
+	<!-- 
+	[1000][EDMS-REQ-070~81]	20150824	최은옥
+	파트정보 체크 
+	-->
+	<select id="chkDeptCnt" parameterType="HashMap" resultType="int">
+		SELECT 
+			COUNT(GROUP_ID) AS CNT
+		FROM XR_GROUP
+		<where>
+			<if test="dept_id != null and dept_id != ''">
+				 AND DEPT_CD = #{dept_id}
+			</if>
+		</where>
+	</select>
+	
+	
+	<!--[1001] 연케코드 목록 Coount :: XR_INTERFACE_CODE -->
+	<select id="externalPagingCount" parameterType="HashMap" resultType="Int">
+		SELECT 
+			COUNT(WORK_CODE) AS CNT				
+		FROM
+		(
+			SELECT 
+				WORK_CODE,WORK_DESCRIPTION,FOLDER_ID,(SELECT FOLDER_NAME_KO FROM XR_FOLDER F WHERE F.FOLDER_ID = I.FOLDER_ID) AS FOLDER_NM
+			FROM XR_INTERFACE_CODE I
+			<where>
+			<if test="strKeyword != null and strKeyword != ''">
+				AND WORK_CODE LIKE  '%${strKeyword}%'
+			</if>
+			</where>
+		) LIST
+	</select>
+	
+	<!--[1001] 연계코드 목록 얻기  -->
+	<select id="externalPagingList" parameterType="HashMap" resultType="CaseMap">
+		SELECT 
+			WORK_CODE,WORK_DESCRIPTION,FOLDER_ID,FOLDER_NM
+		FROM(
+			SELECT WORK_CODE,WORK_DESCRIPTION,FOLDER_ID,(SELECT FOLDER_NAME_KO FROM XR_FOLDER F WHERE F.FOLDER_ID = I.FOLDER_ID) AS FOLDER_NM,
+					CEIL((ROW_NUMBER() OVER(ORDER BY ${orderCol} ${orderType} )) / ${page_size} ) PAGENUM	
+					FROM XR_INTERFACE_CODE I
+			<where>
+			<if test="strKeyword != null and strKeyword != ''">
+				AND WORK_CODE LIKE '%${strKeyword}%'
+			</if>		
+			</where>
+			) LIST
+		WHERE LIST.PAGENUM = #{nPage}	
+									
+	</select>
+	
+	<!--[1001] 연케코드 목록 얻기 PAGE :: XR_INTERFACE_CODE -->
+	<select id="externalDetailList" parameterType="HashMap" resultType="CaseMap">
+		SELECT 
+			WORK_CODE,WORK_DESCRIPTION,FOLDER_ID
+			FROM XR_INTERFACE_CODE
+			<where>
+			<if test="strKeyword != null and strKeyword != ''">
+				AND WORK_CODE LIKE '%${strKeyword}%'
+			</if>		
+			</where>									
+	</select>
+	
+	
+	<!-- [1001] 연계코드 수정 :: XR_INTERFACE_CODE -->
+	<update id="interfaceUpdate" parameterType="HashMap">
+		UPDATE XR_INTERFACE_CODE			
+		<set>		
+			<if test="work_description != null and work_description != ''">
+				WORK_DESCRIPTION = #{work_description},
+			</if>			
+			<if test="folder_id != null and folder_id != ''">
+				FOLDER_ID = #{folder_id},
+			</if>			
+		</set>
+		<where>			
+			<if test="work_code != null and work_code != ''">
+				AND WORK_CODE = #{work_code}	
+			</if>			
+		</where> 				
+	</update>	
+	
+	<!-- [1001] 연계코드 삽입 :: XR_INTERFACE_CODE -->
+	<insert id="interfaceInsert" parameterType="HashMap">
+		INSERT INTO XR_INTERFACE_CODE (	
+			WORK_CODE, WORK_DESCRIPTION, FOLDER_ID 
+		) VALUES (	
+			#{work_code}, #{work_description}, #{folder_id}	
+		)
+	</insert>
+	<!-- [1001] 연계코드삭제 -->
+	<delete id="interfaceDelete" parameterType="HashMap">
+		DELETE FROM XR_INTERFACE_CODE
+		WHERE
+			WORK_CODE = #{work_code}
+	</delete>
+	
+	<!-- [2000] 인사정보 테이블에서 데이터얻기 (EAI에서 XR_SYNCGROUP 테이블로 전송) -->
+	<select id="syncGroup" resultType="SyncGroup">
+		/*
+		SELECT * FROM XR_SYNCGROUP
+		WHERE TO_CHAR(INSERT_DATE, 'YYYYMMDD') = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL)
+		START WITH DEPT_CD = (SELECT DEPT_CD FROM XR_SYNCGROUP WHERE DEPT_CD = PARENT_ID AND TO_CHAR(INSERT_DATE, 'YYYYMMDD') = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL))
+		CONNECT BY NOCYCLE PRIOR DEPT_CD = PARENT_ID
+		*/
+		SELECT * FROM XR_SYNCGROUP
+		WHERE TO_CHAR(INSERT_DATE, 'YYYYMMDD') = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL)
+		ORDER BY SORT_INDEX
+	</select>
+	
+	<!-- [2000] 인사정보 테이블에서 데이터얻기 (EAI에서 XR_SYNCUSER 테이블로 전송) -->
+	<select id="syncUser" resultType="SyncUser">
+		SELECT * FROM XR_SYNCUSER
+		WHERE TO_CHAR(INSERT_DATE, 'YYYYMMDD') = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL)
+	</select>
+	
+	<!-- [2000] 10일이 지난 data 삭제하기 -->
+	<delete id="deleteExpiredSyncData" parameterType="HashMap">
+		DELETE FROM ${table_nm}
+		<![CDATA[WHERE TO_CHAR(INSERT_DATE, 'YYYYMMDD') <= (SELECT TO_CHAR(SYSDATE-10, 'YYYYMMDD') FROM DUAL) ]]>
+	</delete>
+	
+	<!-- [2000] EAI에서 넘어오는 ROOT의 parent_id가 null이라서 dept_cd를 parent_id로 넣어준다 -->
+	<update id="updateSynGroupRootParentId">
+		UPDATE XR_SYNCGROUP
+		SET PARENT_ID = (SELECT DEPT_CD FROM XR_SYNCGROUP WHERE PARENT_ID IS NULL AND TO_CHAR(INSERT_DATE, 'YYYYMMDD') = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL))
+		WHERE PARENT_ID IS NULL AND TO_CHAR(INSERT_DATE, 'YYYYMMDD') = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL)
+	</update>
+		
+</mapper>
