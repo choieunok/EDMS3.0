@@ -11,6 +11,7 @@
 		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd">
 	
 	<!-- 외부시스템 연계시 사용 DB 주소 -->
+	<!--  
 	<util:properties id="dbConfig" location="/WEB-INF/classes/config/db.properties" />
 
 	<bean id="dataSourceImp" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
@@ -19,11 +20,12 @@
 		<property name="username" value="#{dbConfig['DB_USERNAME_IMP']}" />
 		<property name="password" value="#{dbConfig['DB_PASSWORD_IMP']}" />
 	</bean>
+	-->
 	
-<!-- 	<bean id="dataSourceImp" class="org.springframework.jndi.JndiObjectFactoryBean"> -->
-<!-- 		<property name="jndiName" value="java:/oracleImp"/> -->
-<!-- 		<property name="resourceRef" value="true" /> -->
-<!-- 	</bean> -->
+	<bean id="dataSourceImp" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName" value="java:comp/env/jdbc/oracle"/>
+		<property name="resourceRef" value="true" />
+	</bean>
 	
 	<bean id="vendorPropertiesImp" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<property name="properties">
