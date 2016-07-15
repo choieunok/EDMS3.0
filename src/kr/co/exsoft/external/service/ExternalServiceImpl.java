@@ -75,6 +75,8 @@ import kr.co.exsoft.user.vo.UserVO;
  * [1000][EDMS-REQ-070~81]	2015-08-24	최은옥	 : 외부시스템 연계
  * [1001][EDMS-REQ-070~81]	2015-09-14	최은옥	 : 외부시스템 연계코드관리(관리자 화면)
  * [1007][EDMS-REQ-070~81]	2016-04-28	최은옥	 : 외부시스템 폴더 생성시 '관리자'로 생성되게 수정
+ * [2000][로직 수정]	2016-07-01	이재민 : 페이지 다운로드시 맞는 doc_id에 존재하지않는 page_id를 입력하면 exception발생하게 수정
+ * 
  */
 @Service("externalService")
 public class ExternalServiceImpl extends ExsoftAbstractServiceImpl implements ExternalService {
@@ -1478,6 +1480,15 @@ public class ExternalServiceImpl extends ExsoftAbstractServiceImpl implements Ex
 			errorCd = new String[]{ConstantInterfaceErrorCode.DBACCESS_ERROR_1002,"XR_PAGE(SELECT)"};
 			throw processException(ConstantInterfaceErrorCode.DBACCESS_ERROR_1002,errorCd);
 		}
+		
+		// [2000] Start
+		CaseInsensitiveMap filedRet = new CaseInsensitiveMap();		
+		filedRet = pageDao.xrFileList(map);
+		if (filedRet == null){
+			errorCd = new String[]{ConstantInterfaceErrorCode.DBACCESS_ERROR_1002,"INVALID PAGE_ID"};
+			throw processException(ConstantInterfaceErrorCode.DBACCESS_ERROR_1002,errorCd);			
+		}
+		// [2000] End
     	
     	// EXREP 연계해서 파일정보 가져오기. :: eXrep C/S Client 생성.  
     	EXrepClient eXrepClient = new EXrepClient();
